@@ -6,3 +6,4 @@ This is the course assignment project for **Data Science Specialization** : *Rep
 -  pdf file  for reproducible research
 -  data zip file
 -  data file
+-  data documentation file

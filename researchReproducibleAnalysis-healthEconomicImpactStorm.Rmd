@@ -5,7 +5,6 @@ date: "`r Sys.Date()`"
 output: 
   pdf_document:
       keep_md: TRUE
-
 ---
 
 ```{r setup, include=FALSE}
@@ -14,37 +13,67 @@ knitr::opts_chunk$set(echo = TRUE,
                       message = FALSE)
 ```
 
-## Synopsis  
+## Synopsis
 
-  
-  
-    
-      
-## Data processing      
+Storms and other severe weather events have significant impacts on population health and economy. From the database of **National Oceanic & Atmospheric Administration**, I downloaded the data between 1950 and 2011 using the following link: [storm-dataset](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2). The documentation of the data can also be found [here](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf). Using this data, I examine which type of storms or severe weather events are causing the most *damage to population health and economy*.
 
-**Due to the internet connection problem, I will not run some of the following lines to save the time rendering the pdf file.**
+## Data processing
+
+**Due to the internet connection problem, I will not run some of the following lines to save the time rendering the pdf file.** In addition, the data documentation downloaded from R codes has error. Thus, I downloaded it manually and changed my codes as comment by adding "\#" so that my codes can be seen.
 
 ### Download and read the data
+
 ```{r downloads, include=T}
 ### URLs for download
-docURL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf"
-dataURL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+# docURL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf"
+# dataURL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
 
 ### download the files (but not run due to unstable internet connection)
-# download.file(url = docURL, destfile = "data-documentation.pdf", method = "libcurl")
+# download.file(url = docURL, destfile = "data-documentation.pdf",, method = "libcurl")
 # download.file(url = dataURL, destfile = "storm-dataset.csv.bz2", method = "libcurl")
 
 ### read the data
 data <- read.csv(bzfile("storm-dataset.csv.bz2"))
 ```
 
-### Check the data
+### Check the data structure
+
+```{r checkData, include=TRUE}
+dim(data)
+names(data)
 head(data)
+str(data)
+
+```
+
+The data set has 37 variables with 902,297 observations of storms or severe weather events. Here the columns required for the analysis are:
+
+-   8."EVTYPE"
+-   23.FATALITIES"
+-   24."INJURIES"
+-   25."PROPDMG"
+-   26."PROPDMGEXP"
+-   27."CROPDMG"
+-   28."CROPDMGEXP"  
+
+These columns will be selected as a subset before the data analysis. Property damage exponent ("PROPDMGEXP") and crop damage exponent ("CROPDMGEXP") need to be changed to numerical values.  
+
+### Data preparation for analysis
+
+First, the columns required are selected.
+```{r subset, include=TRUE}
+df <- data[,c("EVTYPE","FATALITIES","INJURIES","PROPDMG","PROPDMGEXP","CROPDMG","CROPDMGEXP")]
+head(df)
+```
   
-  
-    
-    
-      
-      
-      
+Now check the values.
+```{r checkVariableValue, include=TRUE}
+events <- with(df, sort(unique(EVTYPE)))
+```
+The event types will be regrouped as followed.
+
 ## Results
+```{r }
+
+```
+

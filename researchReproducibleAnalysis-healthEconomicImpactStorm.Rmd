@@ -2,9 +2,9 @@
 title: "Health and Economic Damages Caused by Storms in US"
 author: "Kaung Myat Khant"
 date: "`r Sys.Date()`"
-output: 
+output:
   pdf_document:
-      keep_md: TRUE
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE,
 
 ## Synopsis
 
-Storms and other severe weather events have significant impacts on population health and economy. From the database of **National Oceanic & Atmospheric Administration**, I downloaded the data between 1950 and 2011 using the following link: [storm-dataset](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2). The documentation of the data can also be found [here](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf). Using this data, I examine which type of storms or severe weather events are causing the most *damage to population health and economy*.
+Storms and other severe weather events have significant impacts on population health and economy. From the database of **National Oceanic & Atmospheric Administration**, I downloaded the data between 1950 and 2011 using the following link: [storm-dataset](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2). The documentation of the data can also be found [here](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf). Using this data, I examine which type of *storms or severe weather events* are causing the most *damage to population health and economy*.
 
 ## Data processing
 
@@ -38,7 +38,7 @@ data <- read.csv(bzfile("storm-dataset.csv.bz2"))
 
 ### Check the data structure
 
-```{r checkData, include=TRUE}
+```{r checkData, include=TRUE, results='hide'}
 dim(data)
 names(data)
 head(data)
@@ -60,17 +60,137 @@ These columns will be selected as a subset before the data analysis. Property da
 
 ### Data preparation for analysis
 
+Load the libraries required
+```{r library, include=T, results='hide'}
+loadLib <- function(package) {
+    if(!require(package, character.only = T)){
+        install.packages(package, character.only = T)
+        library(package, character.only = T, mask.ok = c("filter","lag"))
+    } else {
+        print(paste(package, "already installed"))
+    }
+}
+
+sapply(c("tidyverse", "stringr", "finalfit"), loadLib)
+```
+
+
 First, the columns required are selected.
 ```{r subset, include=TRUE}
-df <- data[,c("EVTYPE","FATALITIES","INJURIES","PROPDMG","PROPDMGEXP","CROPDMG","CROPDMGEXP")]
+df <- data %>% 
+    select(c("EVTYPE","FATALITIES","INJURIES","PROPDMG","PROPDMGEXP","CROPDMG","CROPDMGEXP"))
 head(df)
 ```
+
   
 Now check the values.
-```{r checkVariableValue, include=TRUE}
-events <- with(df, sort(unique(EVTYPE)))
+```{r checkVariableValue, include=TRUE, results='hide'}
+event <- with(df, sort(unique(EVTYPE)))
 ```
-The event types will be regrouped as followed.
+The event types "?" and those event with zero damage will be filtered.
+```{r filterRows, include=TRUE}
+df <- df %>% 
+    filter(EVTYPE != "?" & (FATALITIES > 0 | INJURIES > 0 | PROPDMG > 0 | CROPDMG > 0))
+```
+
+After removing rows with zero damage, the summary were also removed instantly. Now the weather event will be regrouped.
+
+```{r regroup, include = TRUE}
+df <- df %>% 
+    mutate(
+        ## To Upper Case
+        EVTYPE = str_to_upper(EVTYPE),
+        ## Remove white spaces
+        EVTYPE = str_squish(EVTYPE),
+        ## AVALANCHE
+        EVTYPE = case_when(EVTYPE %in% c("AVALANCE","AVALANCHE") ~ "AVALANCHE"),
+        ## BLIZZARD
+        EVTYPE = case_when(EVTYPE %in% c("BLIZZARD","BLIZZARD/WINTER STORM",
+                                         "GROUND BLIZZARD") ~ "BLIZZARD"),
+        ## COASTAL FLOODING/ EROSION
+        EVTYPE = case_when(EVTYPE %in% c("COASTAL EROSION","COASTAL FLOOD",
+                                         "COASTAL FLOODING", 
+                                         "COASTAL FLOODING/EROSION",
+                                         "EROSION/CSTL FLOOD"
+                                         ) ~ "COASTAL FLOODING/EROSION"),
+        
+        ## COLD/ WINDCHILL (No tornado)
+        EVTYPE = case_when(EVTYPE %in% c("COLD",
+                                         "COLD AND SNOW",
+                                         "COLD AND WET CONDITIONS",
+                                         "COLD TEMPERATURE",
+                                         "COLD WAVE",
+                                         "COLD WEATHER",
+                                         "COLD/WIND CHILL",
+                                         "COLD/WINDS",
+                                         "COOL AND WET",
+                                         "LOW TEMPERATURE") ~ "COLD/WIND CHILL"),
+        
+        ## DROUGHT
+        EVTYPE = case_when(EVTYPE %in% c("DROUGHT",
+                                         "DROUGHT/EXCESSIVE HEAT",
+                                         "HEAT WAVE DROUGHT") ~ "DROUGHT"),
+        ## EXTREME HEAT 
+        EVTYPE = case_when(EVTYPE %in% c("EXCESSIVE HEAT",
+                                         "EXTREME HEAT",
+                                         "HEAT",
+                                         "HEAT WAVE",
+                                         "HEAT WAVES") ~ "EXTREME HEAT"),
+        ## EXTREME COLD/WINDCHILL
+        EVTYPE = case_when(EVTYPE %in% c("EXTENDED COLD",
+                                         "EXTREME COLD",
+                                         "EXTREME COLD/WIND CHILL",
+                                         "EXTREME WIND CHILL",
+                                         "EXTREME WINDCHILL",
+                                         ) ~ "EXTREME COLD/WIND CHILL"),
+        ## FLASH FLOOD
+        EVTYPE = case_when(EVTYPE %in% c("FLASH FLOOD",
+                                         "FLASH FLOOD - HEAVY RAIN",
+                                         "FLASH FLOOD FROM ICE JAMS",
+                                         "FLASH FLOOD LANDSLIDES",
+                                         "FLASH FLOOD WINDS",
+                                         "FLASH FLOOD/",
+                                         "FLASH FLOOD/ STREET",
+                                         "FLASH FLOOD/FLOOD",
+                                         "FLASH FLOOD/LANDSLIDE",
+                                         "FLASH FLOODING",
+                                         "FLASH FLOODING/FLOOD",
+                                         "FLASH FLOODING/THUNDERSTORM WI",
+                                         "FLASH FLOODS",
+                                         "FLOOD FLASH",
+                                         "FLOOD/FLASH",
+                                         "FLOOD/FLASH FLOOD",
+                                         "FLOOD/FLASH/FLOOD",
+                                         "FLOOD/FLASHFLOOD") ~ "FLASH FLOOD"),
+        ## FLOOD
+        EVTYPE = case_when(EVTYPE %in% c("FLOOD",
+                                         "FLOOD/RAIN/WINDS",
+                                         "FLOOD/RIVER FLOOD",
+                                         "FLOODING",
+                                         "FLOODING/HEAVY RAIN",
+                                         "FLOODS") ~ "FLOOD"),
+        ## FREEZING FOG
+        EVTYPE = case_when(EVTYPE %in% c("FOG AND COLD TEMPERATURES",
+                                         "FREEZING FOG",
+                                         "FREEZING DRIZZLE",
+                                         "FREEZING RAIN",
+                                         "FREEZING RAIN/SLEET",
+                                         "FREEZING RAIN/SNOW",
+                                         "FREEZING SPRAY")  ~ "FREEZING FOG"),
+        ## DENSE FOG
+        EVTYPE = case_when(EVTYPE %in% c("FOG", "DENSE FOG") ~ "DENSE FOG"),
+        
+        ## FROST/FREEZE
+        EVTYPE = case_when(EVTYPE %in% c("FROST","FROST/FREEZE",
+                                         "FROST\\FREEZE") ~ "FROST/FREEZE")
+        
+        
+        ## TORNADO
+        EVTYPE = case_when(EVTYPE %in% c("COLD AIR TORNADO"))
+        
+    )
+```
+
 
 ## Results
 ```{r }

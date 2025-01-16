@@ -31,7 +31,6 @@ file.edit("event.txt")
 # regroup events
 df <- df %>% 
         mutate(
-                
                 ## AVALANCHE
                 EVTYPE = case_when(EVTYPE %in% c("AVALANCE","AVALANCHE") ~ "AVALANCHE"),
                 ## BLIZZARD

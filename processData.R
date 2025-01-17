@@ -5,6 +5,7 @@ data <- read.csv(bzfile("storm-dataset.csv.bz2"))
 library(dplyr)
 library(stringr)
 
+
 # subset data
 df <- data %>% 
         select(c("EVTYPE","FATALITIES","INJURIES","PROPDMG","PROPDMGEXP","CROPDMG","CROPDMGEXP")) %>% 
@@ -31,20 +32,18 @@ file.edit("event.txt")
 # regroup events
 df <- df %>% 
         mutate(
-                ## AVALANCHE
-                EVTYPE = case_when(EVTYPE %in% c("AVALANCE","AVALANCHE") ~ "AVALANCHE"),
-                ## BLIZZARD
-                EVTYPE = case_when(EVTYPE %in% c("BLIZZARD","BLIZZARD/WINTER STORM",
-                                                 "GROUND BLIZZARD") ~ "BLIZZARD"),
-                ## COASTAL FLOODING/ EROSION
-                EVTYPE = case_when(EVTYPE %in% c("COASTAL EROSION","COASTAL FLOOD",
+                                   ## AVALANCHE
+                EVTYPE = case_when(EVTYPE %in% c("AVALANCE","AVALANCHE") ~ "AVALANCHE",
+                                   ## BLIZZARD
+                                   EVTYPE %in% c("BLIZZARD","BLIZZARD/WINTER STORM",
+                                                 "GROUND BLIZZARD") ~ "BLIZZARD",
+                                   ## COASTAL FLOODING/ EROSION
+                                   EVTYPE %in% c("COASTAL EROSION","COASTAL FLOOD",
                                                  "COASTAL FLOODING", 
                                                  "COASTAL FLOODING/EROSION",
-                                                 "EROSION/CSTL FLOOD"
-                ) ~ "COASTAL FLOODING/EROSION"),
-                
-                ## COLD/ WINDCHILL (No tornado)
-                EVTYPE = case_when(EVTYPE %in% c("COLD",
+                                                 "EROSION/CSTL FLOOD") ~ "COASTAL FLOODING/EROSION",
+                                   ## COLD/ WINDCHILL (No tornado)
+                                   EVTYPE %in% c("COLD",
                                                  "COLD AND SNOW",
                                                  "COLD AND WET CONDITIONS",
                                                  "COLD TEMPERATURE",
@@ -52,10 +51,12 @@ df <- df %>%
                                                  "COLD WEATHER",
                                                  "COLD/WIND CHILL",
                                                  "COLD/WINDS",
-                                                 "COOL AND WET") ~ "COLD/WIND CHILL"),
-                
-                ## EXTREME HEAT/DROUGHT
-                EVTYPE = case_when(EVTYPE %in% c("DROUGHT",
+                                                 "COOL AND WET",
+                                                 "RECORD COLD",
+                                                 "UNSEASONABLE COLD",
+                                                 "UNSEASONABLY COLD") ~ "COLD/WIND CHILL",
+                                   ## EXTREME HEAT/DROUGHT
+                                   EVTYPE %in% c("DROUGHT",
                                                  "DROUGHT/EXCESSIVE HEAT",
                                                  "HEAT WAVE DROUGHT",
                                                  "EXCESSIVE HEAT",
@@ -63,16 +64,19 @@ df <- df %>%
                                                  "HEAT",
                                                  "HEAT WAVE",
                                                  "HEAT WAVES",
-                                                 "HYPERTHERMIA/EXPOSURE") ~ "EXTREME HEAT/DROUGHT"),
-
-                ## EXTREME COLD/WINDCHILL
-                EVTYPE = case_when(EVTYPE %in% c("EXTENDED COLD",
+                                                 "HYPERTHERMIA/EXPOSURE",
+                                                 "RECORD/EXCESSIVE HEAT",
+                                                 "UNSEASONABLY WARM",
+                                                 "UNSEASONABLY WARM AND DRY",
+                                                 "WARM WEATHER") ~ "EXTREME HEAT/DROUGHT",
+                                   ## EXTREME COLD/WINDCHILL
+                                   EVTYPE %in% c("EXTENDED COLD",
                                                  "EXTREME COLD",
                                                  "EXTREME COLD/WIND CHILL",
                                                  "EXTREME WIND CHILL",
-                                                 "EXTREME WINDCHILL") ~ "EXTREME COLD/WIND CHILL"),
-                ## FLASH FLOOD
-                EVTYPE = case_when(EVTYPE %in% c("FLASH FLOOD",
+                                                 "EXTREME WINDCHILL") ~ "EXTREME COLD/WIND CHILL",
+                                   ## FLASH FLOOD
+                                   EVTYPE %in% c("FLASH FLOOD",
                                                  "FLASH FLOOD - HEAVY RAIN",
                                                  "FLASH FLOOD FROM ICE JAMS",
                                                  "FLASH FLOOD LANDSLIDES",
@@ -90,37 +94,48 @@ df <- df %>%
                                                  "FLOOD/FLASH FLOOD",
                                                  "FLOOD/FLASH/FLOOD",
                                                  "FLOOD/FLASHFLOOD",
-                                                 "MAJOR FLOOD") ~ "FLASH FLOOD"),
-                ## FLOOD
-                EVTYPE = case_when(EVTYPE %in% c("FLOOD",
+                                                 "MAJOR FLOOD") ~ "FLASH FLOOD",
+                                   ## FLOOD
+                                   EVTYPE %in% c("FLOOD",
                                                  "FLOOD/RAIN/WINDS",
                                                  "FLOOD/RIVER FLOOD",
                                                  "FLOODING",
                                                  "FLOODING/HEAVY RAIN",
                                                  "FLOODS",
-                                                 "MINOR FLOODING") ~ "FLOOD"),
-                ## FREEZING FOG
-                EVTYPE = case_when(EVTYPE %in% c("FOG AND COLD TEMPERATURES",
+                                                 "MINOR FLOODING",
+                                                 "RIVER AND STREAM FLOOD",
+                                                 "RIVER FLOOD",
+                                                 "RIVER FLOODING",
+                                                 "RURAL FLOOD",
+                                                 "SMALL STREAM FLOOD",
+                                                 "SNOWMELT FLOODING",
+                                                 "URBAN AND SMALL",
+                                                 "URBAN AND SMALL STREAM FLOODIN",
+                                                 "URBAN FLOOD",
+                                                 "URBAN FLOODING",
+                                                 "URBAN FLOODS",
+                                                 "URBAN SMALL",
+                                                 "URBAN/SMALL STREAM",
+                                                 "URBAN/SMALL STREAM FLOOD",
+                                                 "URBAN/SML STREAM FLD") ~ "FLOOD",
+                                   ## FREEZING FOG
+                                   EVTYPE %in% c("FOG AND COLD TEMPERATURES",
                                                  "FREEZING FOG",
                                                  "FREEZING DRIZZLE",
-                                                 "Freezing drizzle",
-                                                 "Freezing Drizzle",
-                                                 "Freezing Rain",
                                                  "FREEZING RAIN",
                                                  "FREEZING RAIN/SLEET",
                                                  "FREEZING RAIN/SNOW",
                                                  "FREEZING SPRAY",
-                                                 "LIGHT FREEZING RAIN")  ~ "FREEZING FOG"),
-                ## DENSE FOG
-                EVTYPE = case_when(EVTYPE %in% c("FOG", "DENSE FOG") ~ "DENSE FOG"),
-                
-                ## FROST/FREEZE
-                EVTYPE = case_when(EVTYPE %in% c("FROST","FROST/FREEZE",
-                                                 "FROST\FREEZE",
-                                                 "HARD FREEZE") ~ "FROST/FREEZE"),
-                
-                ## ICE STORM
-                EVTYPE = case_when(EVTYPE %in% c("GLAZE",
+                                                 "LIGHT FREEZING RAIN")  ~ "FREEZING FOG",
+                                   ## DENSE FOG
+                                   EVTYPE %in% c("FOG", "DENSE FOG") ~ "DENSE FOG",
+                                   ## FROST/FREEZE
+                                   EVTYPE %in% c("FROST","FROST/FREEZE",
+                                                 "FROST\\FREEZE",
+                                                 "HARD FREEZE",
+                                                 "AGRICULTURAL FREEZE") ~ "FROST/FREEZE",
+                                   ## ICE STORM
+                                   EVTYPE %in% c("GLAZE",
                                                  "GLAZE ICE",
                                                  "GLAZE/ICE STORM",
                                                  "ICE",
@@ -137,12 +152,12 @@ df <- df %>%
                                                  "ICY ROADS",
                                                  "HYPOTHERMIA",
                                                  "HYPOTHERMIA/EXPOSURE",
-                                                 "LOW TEMPERATURE") ~ "ICE STORM"),
-                ## HIGH WIND
-                EVTYPE = case_when(EVTYPE %in% c("HIGH WIND",
+                                                 "LOW TEMPERATURE") ~ "ICE STORM",
+                                   ## HIGH WIND
+                                   EVTYPE %in% c("HIGH WIND",
                                                  "HIGH WIND (G40)",
                                                  "HIGH WIND 48",
-                                                 "HIGH WIND AND SEAS"
+                                                 "HIGH WIND AND SEAS",
                                                  "HIGH WIND DAMAGE",
                                                  "HIGH WIND/BLIZZARD",
                                                  "HIGH WIND/HEAVY SNOW",
@@ -153,18 +168,27 @@ df <- df %>%
                                                  "HIGH WINDS/COASTAL FLOOD",
                                                  "HIGH WINDS/COLD",
                                                  "HIGH WINDS/HEAVY RAIN",
-                                                 "HIGH WINDS/SNOW") ~ "HIGH WIND"),
-                ## STRONG WIND
-                EVTYPE = case_when(EVTYPE %in% c("GUSTY WIND",
+                                                 "HIGH WINDS/SNOW",
+                                                 "NON-TSTM WIND",
+                                                 "NON TSTM WIND",
+                                                 "NON-SEVERE WIND DAMAGE",
+                                                 "WINDS",
+                                                 "WIND") ~ "HIGH WIND",
+                                   ## STRONG WIND
+                                   EVTYPE %in% c("GUSTY WIND",
                                                  "GUSTY WIND/HAIL",
                                                  "GUSTY WIND/HVY RAIN",
                                                  "GUSTY WIND/RAIN",
                                                  "GUSTY WINDS",
                                                  "STORM FORCE WINDS",
                                                  "STRONG WIND",
-                                                 "STRONG WINDS") ~ "STRONG WIND"),
-                ## HAIL
-                EVTYPE = case_when(EVTYPE %in% c("HAIL",
+                                                 "STRONG WINDS",
+                                                 "WIND AND WAVE",
+                                                 "WIND DAMAGE",
+                                                 "WIND STORM",
+                                                 "WIND/HAIL") ~ "STRONG WIND",
+                                   ## HAIL
+                                   EVTYPE %in% c("HAIL",
                                                  "HAIL 0.75",
                                                  "HAIL 075",
                                                  "HAIL 100",
@@ -178,9 +202,10 @@ df <- df %>%
                                                  "HAIL DAMAGE",
                                                  "HAIL/WIND",
                                                  "HAIL/WINDS",
-                                                 "HAILSTORM") ~ "HAIL"),
-                ## HIGH SURF
-                EVTYPE = case_when(EVTYPE %in% c("HAZARDOUS SURF",
+                                                 "HAILSTORM",
+                                                 "SMALL HAIL") ~ "HAIL",
+                                   ## HIGH SURF
+                                   EVTYPE %in% c("HAZARDOUS SURF",
                                                  "HEAVY SEAS",
                                                  "HEAVY SURF",
                                                  "HEAVY SURF AND WIND",
@@ -194,9 +219,15 @@ df <- df %>%
                                                  "HIGH SWELLS",
                                                  "HIGH TIDES",
                                                  "HIGH WATER",
-                                                 "HIGH WAVES") ~ "HIGH SURF"),
-                ## HEAVY RAIN
-                EVTYPE = case_when(EVTYPE %in% c("HEAVY MIX",
+                                                 "HIGH WAVES",
+                                                 "RAPIDLY RISING WATER",
+                                                 "ROGUE WAVE",
+                                                 "ROUGH SEAS",
+                                                 "ROUGH SURF",
+                                                 "STORM SURGE",
+                                                 "STORM SURGE/TIDE") ~ "HIGH SURF",
+                                   ## HEAVY RAIN
+                                   EVTYPE %in% c("HEAVY MIX",
                                                  "HEAVY PRECIPITATION",
                                                  "HEAVY RAIN",
                                                  "HEAVY RAIN AND FLOOD",
@@ -208,9 +239,15 @@ df <- df %>%
                                                  "HEAVY RAINS",
                                                  "HEAVY RAINS/FLOODING",
                                                  "HEAVY SHOWER",
-                                                 "HVY RAIN") ~ "HEAVY RAIN"),
-                ## HEAVY SNOW
-                EVTYPE = case_when(EVTYPE %in% c("HEAVY SNOW",
+                                                 "HVY RAIN",
+                                                 "RECORD RAINFALL",
+                                                 "RAIN",
+                                                 "RAIN/SNOW",
+                                                 "RAIN/WIND",
+                                                 "RAINSTORM",
+                                                 "TORRENTIAL RAINFALL") ~ "HEAVY RAIN",
+                                   ## HEAVY SNOW
+                                   EVTYPE %in% c("HEAVY SNOW",
                                                  "HEAVY SNOW-SQUALLS",
                                                  "HEAVY SNOW AND HIGH WINDS",
                                                  "HEAVY SNOW AND STRONG WINDS",
@@ -225,9 +262,28 @@ df <- df %>%
                                                  "HEAVY SNOW/WIND",
                                                  "HEAVY SNOW/WINTER STORM",
                                                  "HEAVY SNOWPACK",
-                                                 "LATE SEASON SNOW") ~ "HEAVY SNOW"),
-                ## HURRICANE
-                EVTYPE = case_when(EVTYPE %in% c("HURRICANE",
+                                                 "LATE SEASON SNOW",
+                                                 "RECORD SNOW",
+                                                 "SNOW",
+                                                 "SNOW ACCUMULATION",
+                                                 "SNOW AND HEAVY SNOW",
+                                                 "SNOW AND ICE",
+                                                 "SNOW AND ICE STORM",
+                                                 "SNOW FREEZING RAIN",
+                                                 "SNOW SQUALL",
+                                                 "SNOW SQUALLS",
+                                                 "SNOW/ BITTER COLD",
+                                                 "SNOW/ ICE",
+                                                 "SNOW/BLOWING SNOW",
+                                                 "SNOW/COLD",
+                                                 "SNOW/FREEZING RAIN",
+                                                 "SNOW/HEAVY SNOW",
+                                                 "SNOW/HIGH WINDS",
+                                                 "SNOW/ICE",
+                                                 "SNOW/ICE STORM","SNOW/SLEET",
+                                                 "SNOW/SLEET/FREEZING RAIN") ~ "HEAVY SNOW",
+                                   ## HURRICANE
+                                   EVTYPE %in% c("HURRICANE",
                                                  "HURRICANE-GENERATED SWELLS",
                                                  "HURRICANE EDOUARD",
                                                  "HURRICANE EMILY",
@@ -236,22 +292,29 @@ df <- df %>%
                                                  "HURRICANE GORDON",
                                                  "HURRICANE OPAL",
                                                  "HURRICANE OPAL/HIGH WINDS",
-                                                 "HURRICANE/TYPHOON") ~ "HURRICANE"),
-                ## LAKE-EFFECT SNOW
-                EVTYPE = case_when(EVTYPE %in% c("LAKE-EFFECT SNOW",
-                                                 "LAKE EFFECT SNOW") ~ "LAKE-EFFECT SNOW"),
-                ## LAKESHORE FLOOD
-                EVTYPE = case_when(EVTYPE %in% c("LAKE FLOOD",
-                                                 "LAKESHORE FLOOD") ~ "LAKESHORE FLOOD"),
-                ## LANDSLIDES
-                EVTYPE = case_when(EVTYPE %in% c("LANDSLIDE",
+                                                 "HURRICANE/TYPHOON",
+                                                 "TYPHOON") ~ "HURRICANE",
+                                   ## LAKE-EFFECT SNOW
+                                   EVTYPE %in% c("LAKE-EFFECT SNOW",
+                                                 "LAKE EFFECT SNOW") ~ "LAKE-EFFECT SNOW",
+                                   ## LAKESHORE FLOOD
+                                   EVTYPE %in% c("LAKE FLOOD",
+                                                 "LAKESHORE FLOOD") ~ "LAKESHORE FLOOD",
+                                   ## LANDSLIDES
+                                   EVTYPE %in% c("LANDSLIDE",
                                                  "LANDSLIDES",
-                                                 "LANDSLUMP") ~ "LANDSLIDES"),
-                ## LIGHT SNOWFALL
-                EVTYPE = case_when(EVTYPE %in% c("LIGHT SNOW"
-                                                 "LIGHT SNOWFALL") ~ "LIGHT SNOWFALL"),
-                ## LIGHTNING
-                EVTYPE = case_when(EVTYPE %in% c("LIGHTING",
+                                                 "LANDSLUMP",
+                                                 "MUD SLIDE",
+                                                 "MUD SLIDES",
+                                                 "MUD SLIDES URBAN FLOODING",
+                                                 "MUDSLIDE",
+                                                 "MUDSLIDES",
+                                                 "ROCK SLIDE") ~ "LANDSLIDES",
+                                   ## LIGHT SNOWFALL
+                                   EVTYPE %in% c("LIGHT SNOW",
+                                                 "LIGHT SNOWFALL") ~ "LIGHT SNOWFALL",
+                                   ## LIGHTNING
+                                   EVTYPE %in% c("LIGHTING",
                                                  "LIGHTNING",
                                                  "LIGHTNING AND HEAVY RAIN",
                                                  "LIGHTNING AND THUNDERSTORM WIN",
@@ -261,20 +324,190 @@ df <- df %>%
                                                  "LIGHTNING WAUSEON",
                                                  "LIGHTNING.",
                                                  "LIGHTNING/HEAVY RAIN",
-                                                 "LIGNTNING") ~ "LIGHTNING"),
-                ## MARINE THUNDERSTORM WIND
-                EVTYPE = case_when(EVTYPE %in% c("MARINE THUNDERSTORM WIND",
-                                                 "MARINE TSTM WIND") ~ "MARINE THUNDERSTORM WIND"),
-                
-                
-                ## THUNDERSTORM WIND
-                EVTYPE = case_when(EVTYPE %in% c("MICROBURST",
-                                                 "MICROBURST WINDS","GRADIENT WIND",
+                                                 "LIGNTNING") ~ "LIGHTNING",
+                                   ## MARINE THUNDERSTORM WIND
+                                   EVTYPE %in% c("MARINE THUNDERSTORM WIND",
+                                                 "MARINE TSTM WIND") ~ "MARINE THUNDERSTORM WIND",
+                                   ## THUNDERSTORM WIND
+                                   EVTYPE %in% c("MICROBURST",
+                                                 "MICROBURST WINDS",
+                                                 "GRADIENT WIND",
                                                  "GUSTNADO",
-                                                 "DOWNBURST") ~ "THUNDERSTORM WIND"),
-                
-                ## TORNADO
-                EVTYPE = case_when(EVTYPE %in% c("COLD AIR TORNADO",
-                                                 "LANDSPOUT",))
+                                                 "DOWNBURST",
+                                                 "SEVERE THUNDERSTORM",
+                                                 "SEVERE THUNDERSTORM WINDS",
+                                                 "SEVERE THUNDERSTORMS",
+                                                 "SEVERE TURBULENCE",
+                                                 "THUDERSTORM WINDS",
+                                                 "THUNDEERSTORM WINDS",
+                                                 "THUNDERESTORM WINDS",
+                                                 "THUNDERSNOW",
+                                                 "THUNDERSTORM",
+                                                 "THUNDERSTORM DAMAGE TO",
+                                                 "THUNDERSTORM HAIL",
+                                                 "THUNDERSTORM WIND",
+                                                 "THUNDERSTORM WIND (G40)",
+                                                 "THUNDERSTORM WIND 60 MPH",
+                                                 "THUNDERSTORM WIND 65 MPH",
+                                                 "THUNDERSTORM WIND 65MPH",
+                                                 "THUNDERSTORM WIND 98 MPH",
+                                                 "THUNDERSTORM WIND G50",
+                                                 "THUNDERSTORM WIND G52",
+                                                 "THUNDERSTORM WIND G55",
+                                                 "THUNDERSTORM WIND G60",
+                                                 "THUNDERSTORM WIND TREES",
+                                                 "THUNDERSTORM WIND.",
+                                                 "THUNDERSTORM WIND/ TREE",
+                                                 "THUNDERSTORM WIND/ TREES",
+                                                 "THUNDERSTORM WIND/AWNING",
+                                                 "THUNDERSTORM WIND/HAIL",
+                                                 "THUNDERSTORM WIND/LIGHTNING",
+                                                 "THUNDERSTORM WINDS",
+                                                 "THUNDERSTORM WINDS 13",
+                                                 "THUNDERSTORM WINDS 63 MPH",
+                                                 "THUNDERSTORM WINDS AND",
+                                                 "THUNDERSTORM WINDS G60",
+                                                 "THUNDERSTORM WINDS HAIL",
+                                                 "THUNDERSTORM WINDS LIGHTNING",
+                                                 "THUNDERSTORM WINDS.",
+                                                 "THUNDERSTORM WINDS/ FLOOD",
+                                                 "THUNDERSTORM WINDS/FLOODING",
+                                                 "THUNDERSTORM WINDS/FUNNEL CLOU",
+                                                 "THUNDERSTORM WINDS/HAIL",
+                                                 "THUNDERSTORM WINDS53",
+                                                 "THUNDERSTORM WINDSHAIL",
+                                                 "THUNDERSTORM WINDSS",
+                                                 "THUNDERSTORM WINS",
+                                                 "THUNDERSTORMS",
+                                                 "THUNDERSTORMS WIND",
+                                                 "THUNDERSTORMS WINDS",
+                                                 "THUNDERSTORMW",
+                                                 "THUNDERSTORMWINDS",
+                                                 "THUNDERSTROM WIND",
+                                                 "THUNDERTORM WINDS",
+                                                 "THUNERSTORM WINDS",
+                                                 "TSTM WIND",
+                                                 "TSTM WIND (41)",
+                                                 "TSTM WIND (G35)",
+                                                 "TSTM WIND (G40)",
+                                                 "TSTM WIND (G45)",
+                                                 "TSTM WIND 40",
+                                                 "TSTM WIND 45",
+                                                 "TSTM WIND 55",
+                                                 "TSTM WIND 65)",
+                                                 "TSTM WIND AND LIGHTNING",
+                                                 "TSTM WIND DAMAGE",
+                                                 "TSTM WIND G45",
+                                                 "TSTM WIND G58",
+                                                 "TSTM WIND/HAIL",
+                                                 "TSTM WINDS",
+                                                 "TSTMW",
+                                                 "TUNDERSTORM WIND",
+                                                 "WET MICROBURST") ~ "THUNDERSTORM WIND",
+                                   ## MIXED PRECIPITATION
+                                   EVTYPE %in% c("MIXED PRECIP",
+                                                 "MIXED PRECIPITATION") ~ "MIXED PRECIPITATION",
+                                   ## RAIN
+                                   EVTYPE %in% c("TROPICAL STORM",
+                                                 "TROPICAL STORM ALBERTO",
+                                                 "TROPICAL STORM DEAN",
+                                                 "TROPICAL STORM GORDON",
+                                                 "TROPICAL STORM JERRY") ~ "TROPICAL STORM",
+                                   # TORNADO
+                                   EVTYPE %in% c("COLD AIR TORNADO",
+                                                 "LANDSPOUT",
+                                                 "TORNADO",
+                                                 "TORNADO F0",
+                                                 "TORNADO F1",
+                                                 "TORNADO F2",
+                                                 "TORNADO F3",
+                                                 "TORNADOES",
+                                                 "TORNADOES, TSTM WIND, HAIL",
+                                                 "TORNDAO",
+                                                 "WATERSPOUT-TORNADO",
+                                                 "WATERSPOUT TORNADO",
+                                                 "WATERSPOUT/ TORNADO",
+                                                 "WATERSPOUT/TORNADO",
+                                                 "WHIRLWIND") ~ "TORNADO",
+                                   ## WATER SPROUT
+                                   EVTYPE %in% c("WATERSPOUT",
+                                                 "WATERSPOUT-") ~"WATERSPOUT",
+                                   ## WILD FIRES
+                                   EVTYPE %in% c("WILD FIRES",
+                                                 "WILD/FOREST FIRE",
+                                                 "WILD/FOREST FIRES",
+                                                 "WILDFIRE",
+                                                 "WILDFIRES",
+                                                 "GRASS FIRES") ~ "WILD FIRES",
+                                   ## WINTER STORM
+                                   EVTYPE %in% c("WINTER STORM",
+                                                 "WINTER STORM HIGH WINDS",
+                                                 "WINTER STORMS") ~ "WINTER STORM",
+                                   ## WINTER WEATHER
+                                   EVTYPE %in% c("WINTER WEATHER",
+                                                 "WINTER WEATHER MIX",
+                                                 "WINTER WEATHER/MIX",
+                                                 "WINTRY MIX") ~ "WINTER WEATHER",
+                                   ## OTHERS
+                                   TRUE ~ EVTYPE)
                 
         )
+df$EVTYPE <-  str_to_sentence(df$EVTYPE)
+unique(df$EVTYPE)
+library(tidyr)
+library(ggplot2)
+
+
+# order buy total
+df %>%
+    group_by(EVTYPE) %>% 
+    summarise(Fatalities = sum(FATALITIES, na.rm = T),
+              Injuries = sum(INJURIES, na.rm = T), .groups = "drop") %>% 
+    mutate(Total = Fatalities + Injuries) %>% 
+    pivot_longer(cols = c(Fatalities, Injuries, Total),
+                 names_to = "type",
+                 values_to = "damage") %>% 
+    group_by(type) %>% 
+    slice_max(n = 5, order_by = damage) %>% 
+    ggplot(aes(x = damage, y =tidytext::reorder_within(EVTYPE, damage, type),fill = type))+
+    geom_col()+
+    facet_wrap(~ type, nrow = 3, scales = "free_y")+
+    tidytext::scale_y_reordered()+
+    geom_text(aes(label = scales::comma(damage)), size = 3.5, hjust = -0.05)+
+    scale_fill_manual(values = RColorBrewer::brewer.pal(3, "Accent"))+
+    labs(y = "Types of events", x = "Number of casualities")+
+    theme_bw()+
+    theme(legend.position = "")
+    
+
+
+
+# order by median
+df %>%
+    mutate(DmgTotal = rowSums(df[,c("FATALITIES", "INJURIES")],na.rm = T), .after = INJURIES) %>% 
+    group_by(EVTYPE) %>% 
+    summarise(Fatalities = median(FATALITIES, na.rm = T),
+              Injuries = median(INJURIES, na.rm = T),
+              Total = median(DmgTotal), .groups = "drop") %>%
+    pivot_longer(cols = c(Fatalities, Injuries, Total),
+                 names_to = "type",
+                 values_to = "damage")  %>% 
+    group_by(type) %>% 
+    slice_max(n = 5, order_by = damage, with_ties = F) %>%  
+    ggplot(aes(x = damage, y =tidytext::reorder_within(EVTYPE, damage, type),fill = type))+
+    geom_col()+
+    facet_wrap(~ type, nrow = 3, scales = "free_y")+
+    tidytext::scale_y_reordered()+
+    geom_text(aes(label = round(damage,2)), size = 3.5, hjust = -0.05)+
+    scale_fill_manual(values = RColorBrewer::brewer.pal(3, "Accent"))+
+    labs(y = "Types of events", x = "Number of casualities")+
+    theme_bw()+
+    theme(legend.position = "")
+        
+
+df %>% 
+    group_by(EVTYPE) %>% 
+    mutate(fatalities = mean(FATALITIES, na.rm = T))
+
+# export a csv file 
+write.csv()

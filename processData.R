@@ -2,8 +2,7 @@
 data <- read.csv(bzfile("storm-dataset.csv.bz2"))
 
 # libraries
-library(dplyr)
-library(stringr)
+library(tidyverse)
 
 
 # subset data
@@ -11,8 +10,6 @@ df <- data %>%
         select(c("EVTYPE","FATALITIES","INJURIES","PROPDMG","PROPDMGEXP","CROPDMG","CROPDMGEXP")) %>% 
         filter(EVTYPE != "?" & (FATALITIES > 0 | INJURIES > 0 | PROPDMG > 0 | CROPDMG > 0))
 head(df)
-unique(df$PROPDMGEXP)
-unique(df$CROPDMGEXP)
 
 # string treat
 df <- df %>% 
@@ -454,6 +451,46 @@ df <- df %>%
         )
 df$EVTYPE <-  str_to_sentence(df$EVTYPE)
 unique(df$EVTYPE)
+
+unique(df$PROPDMGEXP)
+unique(df$CROPDMGEXP)
+
+
+df <- df %>% 
+    mutate( ## Re-code Property damage exponents
+        PROPDMGEXP = case_when(
+            PROPDMGEXP %in% c("+", "-", "0", "?", "") ~ 1,
+            PROPDMGEXP %in% c("H", "h", "2") ~ 100,
+            PROPDMGEXP %in% c("K", "k", "3") ~ 1000,
+            PROPDMGEXP == "4" ~ 10^4,
+            PROPDMGEXP == "5" ~ 10^5,
+            PROPDMGEXP %in% c("M", "m", "6") ~ 10^6,
+            PROPDMGEXP == "7" ~ 10^7,
+            PROPDMGEXP == "B" ~ 10^9,
+            TRUE ~ NA
+        ),
+        ## Re-code Crop damage exponent
+        CROPDMGEXP = case_when(
+            CROPDMGEXP %in% c("+", "-", "0", "?", "") ~ 1,
+            CROPDMGEXP %in% c("H", "h", "2") ~ 100,
+            CROPDMGEXP %in% c("K", "k", "3") ~ 1000,
+            CROPDMGEXP == "4" ~ 10^4,
+            CROPDMGEXP == "5" ~ 10^5,
+            CROPDMGEXP %in% c("M", "m", "6") ~ 10^6,
+            CROPDMGEXP == "7" ~ 10^7,
+            CROPDMGEXP == "B" ~ 10^9,
+            TRUE ~ NA
+        ),
+        ## create economic loss columns for property and crops
+        economyLoss_property = PROPDMG*PROPDMGEXP,
+        economyLoss_crop = CROPDMG * CROPDMGEXP,
+        economyLoss_total = economyLoss_property + economyLoss_crop
+    )
+
+# export a csv file 
+write.csv(df, "stormData.csv")
+summary(df)
+
 library(tidyr)
 library(ggplot2)
 
@@ -507,7 +544,38 @@ df %>%
 
 df %>% 
     group_by(EVTYPE) %>% 
-    mutate(fatalities = mean(FATALITIES, na.rm = T))
+    summarise(Property = sum(economyLoss_property, na.rm = T),
+              Crop = sum(economyLoss_crop, na.rm = T), .groups = "drop") %>% 
+    mutate(Total = Property+Crop) %>%  
+    pivot_longer(cols = c("Property","Crop","Total"),
+                 names_to = "type",
+                 values_to = "USD") %>% 
+    group_by(type) %>% 
+    slice_max(order_by = USD, n = 5) %>% 
+    ungroup() %>% 
+    ggplot(aes(y = USD, x = tidytext::reorder_within(EVTYPE,-USD,type), fill = type))+
+    geom_col()+
+    scale_y_continuous(limits = c(0,1.8e+11))+
+    facet_wrap(~ type, nrow = 3, scales = "free_x")+
+    tidytext::scale_x_reordered()+
+    geom_text(aes(label = scales::label_dollar()(USD)), vjust = -0.5, size = 3.5)+
+    scale_fill_manual(values = RColorBrewer::brewer.pal(3,"Accent"))+
+    labs(y = "US Dollar", x = "Types of event")+
+    theme_bw()+
+    theme(legend.position = "",
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank())
 
-# export a csv file 
-write.csv()
+df %>% 
+    group_by(EVTYPE) %>% 
+    summarise(Property = sum(economyLoss_property, na.rm = T),
+              Crop = sum(economyLoss_crop, na.rm = T), .groups = "drop") %>% 
+    mutate(Total = Property+Crop) %>%  
+    pivot_longer(cols = c("Property","Crop","Total"),
+                 names_to = "type",
+                 values_to = "USD") %>% 
+    group_by(type) %>% 
+    slice_max(order_by = USD, n = 10) %>%
+    ungroup() %>% 
+    mutate(USD = USD/10^9) %>% 
+    pivot_wider(names_from = type, values_from = USD, values_fill = 0)
